@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARISE SYSTEM</title>
+<meta name="description" content="ARISE SYSTEM is a free leveling system that works offline. Awaken as a hunter, clear daily quests, earn XP, raise your rank and focus inside Dungeon Gates.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#07040f">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ARISE SYSTEM">
+<meta property="og:description" content="ARISE SYSTEM is a free leveling system that works offline. Awaken as a hunter, clear daily quests, earn XP, raise your rank and focus inside Dungeon Gates.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Oxanium:wght@500;600;700&display=swap">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"ARISE SYSTEM","applicationCategory":"GameApplication","operatingSystem":"Any","description":"ARISE SYSTEM is a free leveling system that works offline. Awaken as a hunter, clear daily quests, earn XP, raise your rank and focus inside Dungeon Gates.","offers":{"@type":"Offer","price":"0","priceCurrency":"INR"}}</script>
+<style>
+/* Layout: one centered "system window" column (max 560px) with a fixed bottom tab bar.
+   The awakening screen is a full-height centered HUD frame around the user's own logo.
+   Single committed look: dark violet system UI, corner brackets as the one signature detail. */
+:root {
+  color-scheme: dark;
+  --bg: #07040f;
+  --panel: #120a24;
+  --panel-2: #1b1233;
+  --line: #3a2766;
+  --line-soft: #271a47;
+  --accent: #8b3dff;
+  --accent-2: #c3a0ff;
+  --text: #ede6ff;
+  --dim: #9a8dbb;
+  --good: #4de2a0;
+  --warn: #ffc857;
+  --danger: #ff7b7b;
+  --display: "Oxanium", "Rajdhani", "Segoe UI", system-ui, sans-serif;
+  --body: "Barlow", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { background: var(--bg); }
+body {
+  margin: 0;
+  min-height: 100%;
+  padding-inline: 16px;
+  padding-block: 20px 112px;
+  background: radial-gradient(120% 55% at 50% -8%, rgba(139, 61, 255, 0.24), transparent 62%), var(--bg);
+  color: var(--text);
+  font: 16px/1.45 var(--body);
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; }
+button, input, textarea { font: inherit; color: inherit; }
+img { display: block; }
+
+.shell { max-width: 560px; margin-inline: auto; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.label { font: 600 11px/1 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.dim { color: var(--dim); }
+.small { font-size: 13px; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- panels ---------- */
+.panel { position: relative; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; padding: 16px; min-width: 0; }
+.panel::before, .panel::after { content: ""; position: absolute; width: 12px; height: 12px; border: 2px solid var(--accent); pointer-events: none; }
+.panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
+.panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: 6px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.page-head { display: flex; flex-direction: column; gap: 6px; }
+.page-head h2 { font-size: 24px; letter-spacing: 0.08em; font-weight: 700; }
+
+/* ---------- buttons + inputs ---------- */
+.btn {
+  min-height: 44px; padding: 14px 18px; border: 1px solid transparent; border-radius: 6px;
+  background: var(--panel-2); color: var(--text); cursor: pointer;
+  font: 700 13px/1 var(--display); letter-spacing: 0.14em; text-transform: uppercase;
+}
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.ghost { background: transparent; border-color: var(--line); color: var(--accent-2); }
+.btn.danger { background: transparent; border-color: #5a2a3a; color: var(--danger); }
+.btn.done { background: #12352a; color: var(--good); cursor: default; }
+.btn.block { width: 100%; }
+.btn.compact { min-height: 40px; padding: 10px 14px; font-size: 12px; letter-spacing: 0.08em; }
+.btn.plus { width: 42px; min-height: 40px; padding: 0; font-size: 20px; letter-spacing: 0; }
+.btn.x { width: 40px; min-height: 40px; padding: 0; background: transparent; color: var(--dim); font-size: 22px; letter-spacing: 0; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+@media (hover: hover) {
+  .btn.primary:hover { background: #9c58ff; }
+  .btn.ghost:hover, .btn.danger:hover, .btn.x:hover { background: var(--panel-2); }
+  .tab:hover { color: var(--text); }
+}
+input, textarea {
+  width: 100%; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; font-size: 16px;
+}
+input::placeholder, textarea::placeholder { color: var(--dim); }
+textarea { resize: vertical; min-height: 96px; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.error { color: var(--danger); font-size: 14px; min-height: 1.2em; }
+
+/* ---------- awakening ---------- */
+.awaken { min-height: calc(100dvh - 40px); max-width: 400px; margin: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; text-align: center; }
+.logo-frame { position: relative; width: min(260px, 72vw); aspect-ratio: 1; padding: 7px; border: 1px solid var(--line); animation: rise 0.9s ease both; }
+.logo-frame::before, .logo-frame::after { content: ""; position: absolute; width: 24px; height: 24px; border: 3px solid var(--accent); pointer-events: none; }
+.logo-frame::before { top: -3px; left: -3px; border-right: 0; border-bottom: 0; }
+.logo-frame::after { bottom: -3px; right: -3px; border-left: 0; border-top: 0; }
+.logo { width: 100%; height: 100%; object-fit: cover; }
+.sweep { position: absolute; left: 7px; right: 7px; top: 7px; height: 2px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--accent-2), transparent); box-shadow: 0 0 14px var(--accent); animation: sweep 3.4s ease-in-out infinite; }
+.awaken h1 { font: 700 clamp(28px, 9vw, 40px)/1.05 var(--display); letter-spacing: 0.16em; text-shadow: 0 0 26px rgba(139, 61, 255, 0.6); margin-top: 8px; }
+.sys { color: var(--accent-2); font-size: 14px; letter-spacing: 0.04em; }
+.awaken form { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: 12px; text-align: left; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes sweep { 0% { top: 7px; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { top: calc(100% - 9px); opacity: 0; } }
+
+/* ---------- status ---------- */
+.hero { display: grid; grid-template-columns: minmax(84px, 104px) minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.avatar { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); }
+.who h2 { font-size: 22px; font-weight: 700; letter-spacing: 0.06em; overflow-wrap: anywhere; }
+.who .lv { margin-top: 6px; font: 600 14px/1.2 var(--display); letter-spacing: 0.1em; color: var(--accent-2); }
+.who .ttl { margin-top: 4px; color: var(--dim); font-size: 14px; }
+.rank { display: grid; justify-items: center; gap: 6px; }
+.rank b { width: 56px; height: 56px; display: grid; place-items: center; border: 1px solid var(--accent); border-radius: 6px; font: 700 30px/1 var(--display); color: var(--accent-2); }
+.bar { height: 10px; background: #2a1f45; border-radius: 5px; overflow: hidden; margin-top: 12px; }
+.bar i { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width 0.4s ease; }
+.xp-line { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; font-size: 14px; }
+.points { color: var(--warn); font-weight: 600; font-size: 14px; }
+.stat { display: flex; align-items: center; gap: 12px; padding-block: 10px; border-top: 1px solid var(--line-soft); }
+.stat:first-of-type { border-top: 0; }
+.stat .nm { flex: 1; min-width: 0; font: 600 14px/1.2 var(--display); letter-spacing: 0.1em; }
+.stat .val { min-width: 3ch; text-align: right; font: 700 20px/1 var(--display); color: var(--accent-2); font-variant-numeric: tabular-nums; }
+.stat .slot { width: 42px; }
+.rec { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.rec div { display: flex; flex-direction: column; gap: 6px; }
+.rec b { font: 700 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ---------- quests ---------- */
+.quest { display: flex; align-items: center; gap: 10px; }
+.quest .meta { flex: 1; min-width: 0; }
+.quest .t { font-weight: 600; font-size: 17px; overflow-wrap: anywhere; }
+.quest .t.is-done { color: var(--dim); text-decoration: line-through; text-decoration-color: var(--line); }
+.quest .xp { margin-top: 2px; font-size: 13px; color: var(--warn); font-variant-numeric: tabular-nums; }
+.quest .xp.is-done { color: var(--dim); }
+
+/* ---------- gate ---------- */
+.ring-wrap { position: relative; width: min(240px, 68vw); aspect-ratio: 1; margin-inline: auto; }
+.ring { width: 100%; height: 100%; display: block; }
+.ring circle { fill: none; stroke-width: 8; }
+.ring-bg { stroke: #2a1f45; }
+.ring-fg { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset 0.5s linear; }
+.ring-fg.idle { stroke: var(--line); }
+.ring-time { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; gap: 6px; }
+.ring-time b { font: 700 clamp(40px, 13vw, 54px)/1 var(--display); letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.chips { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.chip { min-height: 44px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--accent-2); cursor: pointer; font: 700 13px/1 var(--display); letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.center { text-align: center; }
+
+/* ---------- tab bar, modal, toast ---------- */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; background: var(--panel); border-top: 1px solid var(--line-soft); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabs { max-width: 560px; margin-inline: auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; min-height: 58px; padding: 8px 0; border: 0; background: none; color: var(--dim); cursor: pointer; font: 600 11px/1 var(--display); letter-spacing: 0.14em; }
+.tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { color: var(--accent-2); box-shadow: inset 0 2px 0 var(--accent); background: var(--panel-2); }
+.modal { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: rgba(4, 2, 10, 0.8); }
+.modal-card { width: min(440px, 100%); max-height: 90dvh; overflow: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-card h3 { font-size: 20px; letter-spacing: 0.08em; }
+.modal-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.toast { position: fixed; left: 50%; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 11; width: max-content; max-width: min(520px, calc(100% - 32px)); padding: 12px 16px; background: var(--panel-2); border: 1px solid var(--accent); border-radius: 6px; text-align: center; font-weight: 600; white-space: pre-line; }
+.is-awaken .toast { bottom: 24px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+</style>
+</head>
+<body>
+<main id="app" class="shell" aria-live="polite"></main>
+
+<nav id="tabbar" class="tabbar" aria-label="Sections" hidden>
+  <div class="tabs">
+    <button class="tab" type="button" data-act="tab" data-tab="status">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+      STATUS
+    </button>
+    <button class="tab" type="button" data-act="tab" data-tab="quests">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10"/><path d="M3.5 6l1.3 1.3L7 5M3.5 12l1.3 1.3L7 11M3.5 18l1.3 1.3L7 17"/></svg>
+      QUESTS
+    </button>
+    <button class="tab" type="button" data-act="tab" data-tab="gate">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V10a7 7 0 0 1 14 0v11"/><path d="M9 21v-8a3 3 0 0 1 6 0v8"/></svg>
+      GATE
+    </button>
+  </div>
+</nav>
+
+<div id="modal" class="modal" hidden>
+  <div id="modal-card" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"></div>
+</div>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<noscript><p style="padding:24px;text-align:center">ARISE SYSTEM needs JavaScript turned on.</p></noscript>
+
+<script>
+(function () {
+'use strict';
+
+/* <logic> */
+// Game rules. No DOM access in this block, so it can be tested on its own.
+const MAX_LEVEL = 100, POINTS_PER_LEVEL = 3, MAX_QUESTS = 12, MAX_TITLE = 40, MIN_XP = 5, MAX_XP = 200, MAX_NAME = 16;
+const STAT_NAMES = ['STRENGTH', 'AGILITY', 'VITALITY', 'INTELLIGENCE', 'SENSE'];
+const RANKS = ['E', 'D', 'C', 'B', 'A', 'S'];
+const TITLES = ['Novice Hunter', 'Apprentice Hunter', 'Veteran Hunter', 'Elite Hunter', 'Master Hunter', 'S-Rank Legend'];
+
+function defaultQuests() {
+  return [
+    { title: 'Push-ups x50', xp: 30, done: false },
+    { title: 'Sit-ups x50', xp: 30, done: false },
+    { title: 'Squats x50', xp: 30, done: false },
+    { title: 'Run 3 km', xp: 50, done: false },
+    { title: 'Read or study 30 min', xp: 30, done: false }
+  ];
+}
+
+function newPlayer() {
+  return {
+    name: 'Hunter', awakened: false, level: 1, xp: 0, points: 0,
+    stats: [10, 10, 10, 10, 10], streak: 0, bestStreak: 0,
+    lastActiveDay: -1, lastAllDoneDay: -1, totalXp: 0, questsCompleted: 0,
+    gateEndMillis: 0, gateMinutes: 0, quests: defaultQuests()
+  };
+}
+
+function xpToNext(level) { const n = level - 1; return 100 + 30 * n + 2 * n * n; }
+
+// Adds XP and returns how many levels were gained.
+function addXp(p, amount) {
+  if (!(amount > 0)) return 0;
+  p.totalXp += amount;
+  if (p.level >= MAX_LEVEL) return 0;
+  p.xp += amount;
+  let gained = 0;
+  while (p.level < MAX_LEVEL && p.xp >= xpToNext(p.level)) {
+    p.xp -= xpToNext(p.level);
+    p.level++;
+    p.points += POINTS_PER_LEVEL;
+    gained++;
+  }
+  if (p.level >= MAX_LEVEL) p.xp = 0;
+  return gained;
+}
+
+function rankIndex(level) {
+  if (level < 10) return 0;
+  if (level < 20) return 1;
+  if (level < 35) return 2;
+  if (level < 50) return 3;
+  if (level < 70) return 4;
+  return 5;
+}
+
+function spendPoint(p, stat) {
+  if (p.points <= 0 || stat < 0 || stat >= p.stats.length) return false;
+  p.stats[stat]++;
+  p.points--;
+  return true;
+}
+
+// Call on open/resume. New day: quests reset, and a missed day breaks the streak.
+function rollover(p, today) {
+  if (p.lastActiveDay === today) return false;
+  p.quests.forEach(function (q) { q.done = false; });
+  if (p.lastAllDoneDay !== today - 1 && p.lastAllDoneDay !== today) p.streak = 0;
+  p.lastActiveDay = today;
+  return true;
+}
+
+function doneCount(p) { return p.quests.filter(function (q) { return q.done; }).length; }
+function allQuestsDone(p) { return p.quests.length > 0 && doneCount(p) === p.quests.length; }
+
+function completeQuest(p, index, today) {
+  const r = { xp: 0, bonusXp: 0, levelsGained: 0, allDone: false };
+  if (index < 0 || index >= p.quests.length) return r;
+  const q = p.quests[index];
+  if (q.done) return r;
+  q.done = true;
+  p.questsCompleted++;
+  r.xp = q.xp;
+  r.levelsGained += addXp(p, q.xp);
+  if (allQuestsDone(p) && p.lastAllDoneDay !== today) {
+    p.streak = (p.lastAllDoneDay === today - 1) ? p.streak + 1 : 1;
+    if (p.streak > p.bestStreak) p.bestStreak = p.streak;
+    p.lastAllDoneDay = today;
+    r.allDone = true;
+    r.bonusXp = 50 + 10 * Math.min(p.streak, 20);
+    r.levelsGained += addXp(p, r.bonusXp);
+  }
+  return r;
+}
+
+function clampXp(x) { return Math.max(MIN_XP, Math.min(MAX_XP, x)); }
+
+function addQuest(p, title, xp) {
+  if (typeof title !== 'string') return false;
+  let t = title.trim();
+  if (!t || p.quests.length >= MAX_QUESTS) return false;
+  if (t.length > MAX_TITLE) t = t.slice(0, MAX_TITLE);
+  const n = Math.floor(Number(xp));
+  p.quests.push({ title: t, xp: clampXp(isFinite(n) ? n : 30), done: false });
+  return true;
+}
+
+function deleteQuest(p, index) {
+  if (index < 0 || index >= p.quests.length) return false;
+  p.quests.splice(index, 1);
+  return true;
+}
+
+// Focus timer ("Dungeon Gate"): 2 XP per minute, awarded only when the timer finishes.
+function gateXp(minutes) { return minutes * 2; }
+function gateActive(p) { return p.gateEndMillis > 0; }
+function startGate(p, minutes, now) { p.gateMinutes = minutes; p.gateEndMillis = now + minutes * 60000; }
+function abandonGate(p) { p.gateEndMillis = 0; p.gateMinutes = 0; }
+function gateRemaining(p, now) { return Math.max(0, p.gateEndMillis - now); }
+function finishGateIfDone(p, now) {
+  if (p.gateEndMillis <= 0 || now < p.gateEndMillis) return null;
+  const r = { xp: gateXp(p.gateMinutes), bonusXp: 0, levelsGained: 0, allDone: false };
+  r.levelsGained = addXp(p, r.xp);
+  abandonGate(p);
+  return r;
+}
+
+// Turns anything read from storage or a backup code into a safe, complete player.
+function toInt(v, def, min, max) {
+  const n = Math.floor(Number(v));
+  if (!isFinite(n)) return def;
+  return Math.max(min, Math.min(max, n));
+}
+function sanitize(raw) {
+  const p = newPlayer();
+  if (!raw || typeof raw !== 'object') return p;
+  const nm = typeof raw.name === 'string' ? raw.name.trim().slice(0, MAX_NAME) : '';
+  p.name = nm || 'Hunter';
+  p.awakened = raw.awakened === true;
+  p.level = toInt(raw.level, 1, 1, MAX_LEVEL);
+  p.xp = toInt(raw.xp, 0, 0, 1e9);
+  p.points = toInt(raw.points, 0, 0, 1e6);
+  p.stats = STAT_NAMES.map(function (_, i) { return toInt(raw.stats && raw.stats[i], 10, 0, 99999); });
+  p.streak = toInt(raw.streak, 0, 0, 1e6);
+  p.bestStreak = toInt(raw.bestStreak, 0, 0, 1e6);
+  p.lastActiveDay = toInt(raw.lastActiveDay, -1, -1, 1e7);
+  p.lastAllDoneDay = toInt(raw.lastAllDoneDay, -1, -1, 1e7);
+  p.totalXp = toInt(raw.totalXp, 0, 0, 1e12);
+  p.questsCompleted = toInt(raw.questsCompleted, 0, 0, 1e9);
+  p.gateEndMillis = toInt(raw.gateEndMillis, 0, 0, 1e15);
+  p.gateMinutes = toInt(raw.gateMinutes, 0, 0, 600);
+  if (Array.isArray(raw.quests)) {
+    p.quests = raw.quests.slice(0, MAX_QUESTS)
+      .filter(function (q) { return q && typeof q.title === 'string' && q.title.trim(); })
+      .map(function (q) {
+        return { title: q.title.trim().slice(0, MAX_TITLE), xp: clampXp(toInt(q.xp, 30, 0, 1e6)), done: q.done === true };
+      });
+  }
+  if (p.level >= MAX_LEVEL) p.xp = 0;
+  return p;
+}
+/* </logic> */
+
+// ------------------------------------------------------------------ storage
+
+const KEY = 'arise_system_save_v1';
+let memorySave = null; // only used if the browser refuses to store data
+let P = loadSave();
+let tab = 'status';
+let selMin = 25;
+let tickTimer = null;
+let toastTimer = null;
+let lastFocus = null;
+
+function loadSave() {
+  try {
+    const s = localStorage.getItem(KEY);
+    if (s) return sanitize(JSON.parse(s));
+  } catch (e) { /* storage blocked or damaged: fall through */ }
+  return memorySave ? sanitize(memorySave) : newPlayer();
+}
+function save() {
+  memorySave = JSON.parse(JSON.stringify(P));
+  try { localStorage.setItem(KEY, JSON.stringify(P)); } catch (e) { /* keep memory copy */ }
+}
+function today() { return Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000); }
+
+// ------------------------------------------------------------------ helpers
+
+function $(sel) { return document.querySelector(sel); }
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+function fmtTime(ms) {
+  const s = Math.ceil(ms / 1000);
+  const m = Math.floor(s / 60), r = s % 60;
+  return String(m).padStart(2, '0') + ':' + String(r).padStart(2, '0');
+}
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.hidden = true; }, 3600);
+}
+function openModal(html) {
+  lastFocus = document.activeElement;
+  $('#modal-card').innerHTML = html;
+  $('#modal').hidden = false;
+  const f = $('#modal-card').querySelector('input, textarea, button');
+  if (f) f.focus();
+}
+function closeModal() {
+  $('#modal').hidden = true;
+  $('#modal-card').innerHTML = '';
+  if (lastFocus && lastFocus.focus && document.contains(lastFocus)) lastFocus.focus();
+}
+function announce(msg, r) {
+  toast(msg);
+  if (r && r.levelsGained > 0) {
+    openModal(
+      '<h3 id="modal-title">LEVEL UP</h3>' +
+      '<p>You are now level ' + P.level + ' (Rank ' + RANKS[rankIndex(P.level)] + ').<br>' +
+      '+' + (r.levelsGained * POINTS_PER_LEVEL) + ' ability points. Spend them on the STATUS tab.</p>' +
+      '<div class="modal-actions"><button class="btn primary" type="button" data-act="close">OK</button></div>'
+    );
+  }
+}
+
+// ------------------------------------------------------------------ screens
+
+function awakenHTML() {
+  return '<section class="awaken">' +
+    '<div class="logo-frame"><img class="logo" src="logo.jpg" alt="ARISE SYSTEM logo" width="735" height="747"><span class="sweep"></span></div>' +
+    '<h1>ARISE SYSTEM</h1>' +
+    '<p class="sys">SYSTEM // A new player has been detected.</p>' +
+    '<form data-form="awaken">' +
+      '<label class="label" for="name-input">Hunter name</label>' +
+      '<input id="name-input" maxlength="' + MAX_NAME + '" autocomplete="off" placeholder="Enter your hunter name">' +
+      '<button class="btn primary block" type="submit">Awaken</button>' +
+    '</form>' +
+  '</section>';
+}
+
+function statusHTML() {
+  const ri = rankIndex(P.level);
+  const need = xpToNext(P.level);
+  const maxed = P.level >= MAX_LEVEL;
+  const pct = maxed ? 100 : Math.min(100, Math.round(P.xp / need * 100));
+  let stats = '';
+  STAT_NAMES.forEach(function (name, i) {
+    stats += '<div class="stat"><span class="nm">' + name + '</span><span class="val">' + P.stats[i] + '</span>' +
+      (P.points > 0
+        ? '<button class="btn primary plus" type="button" data-act="spend" data-i="' + i + '" aria-label="Add a point to ' + name + '">+</button>'
+        : '<span class="slot"></span>') +
+      '</div>';
+  });
+  return '<section class="panel">' +
+      '<div class="hero">' +
+        '<img class="avatar" src="profile.jpg" alt="Player portrait" width="104" height="104">' +
+        '<div class="who"><h2>' + esc(P.name.toUpperCase()) + '</h2>' +
+          '<p class="lv">LV ' + P.level + '</p><p class="ttl">' + TITLES[ri] + '</p></div>' +
+        '<div class="rank"><span class="label">Rank</span><b>' + RANKS[ri] + '</b></div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="panel"><span class="label">Experience</span>' +
+      '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="xp-line num"><span>' + (maxed ? 'MAX LEVEL' : P.xp + ' / ' + need + ' XP') + '</span><span class="dim">Total ' + P.totalXp + ' XP</span></div>' +
+    '</section>' +
+    '<section class="panel"><span class="label">Abilities</span>' +
+      (P.points > 0 ? '<p class="points" style="margin-top:8px">Unspent points: ' + P.points + '</p>' : '') +
+      '<div style="margin-top:8px">' + stats + '</div>' +
+    '</section>' +
+    '<section class="panel stack"><span class="label">Record</span>' +
+      '<div class="rec num">' +
+        '<div><b>' + P.streak + '</b><span class="dim small">Day streak</span></div>' +
+        '<div><b>' + P.bestStreak + '</b><span class="dim small">Best streak</span></div>' +
+        '<div><b>' + P.questsCompleted + '</b><span class="dim small">Quests done</span></div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="panel stack"><span class="label">Your data</span>' +
+      '<p class="dim small">Progress is saved in this browser on this device, and works offline. Use a backup code to move it to another phone or keep a copy.</p>' +
+      '<div class="row-actions">' +
+        '<button class="btn ghost compact" type="button" data-act="backup">Backup code</button>' +
+        '<button class="btn danger compact" type="button" data-act="reset">Reset progress</button>' +
+      '</div>' +
+    '</section>';
+}
+
+function questsHTML() {
+  let rows = '';
+  P.quests.forEach(function (q, i) {
+    rows += '<div class="panel quest">' +
+      '<div class="meta"><div class="t' + (q.done ? ' is-done' : '') + '">' + esc(q.title) + '</div>' +
+      '<div class="xp' + (q.done ? ' is-done' : '') + '">+' + q.xp + ' XP</div></div>' +
+      (q.done
+        ? '<button class="btn done compact" type="button" disabled>Done</button>'
+        : '<button class="btn primary compact" type="button" data-act="complete" data-i="' + i + '">Complete</button>') +
+      '<button class="btn x" type="button" data-act="remove" data-i="' + i + '" aria-label="Remove quest ' + esc(q.title) + '">&times;</button>' +
+    '</div>';
+  });
+  if (!P.quests.length) rows = '<div class="panel"><p class="dim">No quests yet. Add your first one below.</p></div>';
+  return '<div class="page-head"><h2>DAILY QUESTS</h2>' +
+      '<p class="num" style="color:var(--accent-2)">' + doneCount(P) + ' / ' + P.quests.length + ' completed &nbsp;|&nbsp; streak ' + P.streak + '</p>' +
+      '<p class="dim small">Clear every quest for a bonus. Quests reset at midnight.</p></div>' +
+    rows +
+    '<button class="btn ghost block" type="button" data-act="addquest">+ Add quest</button>';
+}
+
+function gateHTML() {
+  const active = gateActive(P);
+  const mins = active ? P.gateMinutes : selMin;
+  const C = 552.92;
+  let chips = '';
+  [15, 25, 45, 60].forEach(function (m) {
+    chips += '<button class="chip" type="button" data-act="gatemin" data-m="' + m + '" aria-pressed="' + (m === selMin) + '">' + m + ' MIN</button>';
+  });
+  return '<div class="page-head"><h2>DUNGEON GATE</h2>' +
+      '<p class="dim small">Open a gate to focus. Let the timer finish to clear it and earn 2 XP per minute. The timer keeps running if you leave the page.</p></div>' +
+    '<section class="panel stack">' +
+      '<div class="ring-wrap"><svg class="ring" viewBox="0 0 200 200" aria-hidden="true">' +
+        '<circle class="ring-bg" cx="100" cy="100" r="88"/>' +
+        '<circle id="ring-fg" class="ring-fg' + (active ? '' : ' idle') + '" cx="100" cy="100" r="88" transform="rotate(-90 100 100)" stroke-dasharray="' + C + '" stroke-dashoffset="0"/>' +
+        '</svg>' +
+        '<div class="ring-time"><span class="label">' + (active ? 'Gate open' : 'Gate closed') + '</span>' +
+        '<b id="gate-time" class="num">' + (active ? fmtTime(gateRemaining(P, Date.now())) : fmtTime(mins * 60000)) + '</b></div></div>' +
+      '<p class="center" style="color:var(--accent-2);font-weight:600">Reward: +' + gateXp(mins) + ' XP</p>' +
+      (active
+        ? '<button class="btn danger block" type="button" data-act="abandon">Abandon gate</button>'
+        : '<div class="chips">' + chips + '</div><button class="btn primary block" type="button" data-act="gatestart">Enter gate</button>') +
+    '</section>';
+}
+
+function render() {
+  stopTick();
+  const app = $('#app');
+  const bar = $('#tabbar');
+  document.body.classList.toggle('is-awaken', !P.awakened);
+  if (!P.awakened) {
+    bar.hidden = true;
+    app.innerHTML = awakenHTML();
+    return;
+  }
+  bar.hidden = false;
+  document.querySelectorAll('.tab').forEach(function (b) {
+    if (b.dataset.tab === tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  app.innerHTML = tab === 'status' ? statusHTML() : tab === 'quests' ? questsHTML() : gateHTML();
+  if (tab === 'gate') startTick();
+}
+
+// ------------------------------------------------------------------ gate timer
+
+function stopTick() { if (tickTimer) { clearInterval(tickTimer); tickTimer = null; } }
+function startTick() {
+  if (!gateActive(P)) return;
+  tickTimer = setInterval(onTick, 500);
+  onTick();
+}
+function onTick() {
+  if (!gateActive(P)) { stopTick(); return; }
+  const now = Date.now();
+  const r = finishGateIfDone(P, now);
+  if (r) {
+    save();
+    render();
+    announce('Gate cleared!  +' + r.xp + ' XP', r);
+    return;
+  }
+  const left = gateRemaining(P, now);
+  const t = $('#gate-time');
+  if (t) t.textContent = fmtTime(left);
+  const ring = $('#ring-fg');
+  if (ring) ring.setAttribute('stroke-dashoffset', String(552.92 * (1 - left / (P.gateMinutes * 60000))));
+}
+
+// ------------------------------------------------------------------ backup code
+
+function toB64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  bytes.forEach(function (b) { bin += String.fromCharCode(b); });
+  return btoa(bin);
+}
+function fromB64(b64) {
+  const bin = atob(b64.replace(/\s+/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(bin, function (c) { return c.charCodeAt(0); }));
+}
+
+function openBackup() {
+  const code = toB64(JSON.stringify(P));
+  openModal(
+    '<h3 id="modal-title">BACKUP CODE</h3>' +
+    '<div class="field"><label class="label" for="backup-out">Your code</label>' +
+      '<textarea id="backup-out" readonly>' + code + '</textarea>' +
+      '<button class="btn ghost compact" type="button" data-act="copycode">Copy code</button></div>' +
+    '<div class="field"><label class="label" for="backup-in">Restore from a code</label>' +
+      '<textarea id="backup-in" placeholder="Paste a backup code here"></textarea>' +
+      '<p id="backup-err" class="error" role="alert"></p></div>' +
+    '<div class="modal-actions"><button class="btn ghost" type="button" data-act="close">Close</button>' +
+    '<button class="btn primary" type="button" data-act="restore">Restore</button></div>'
+  );
+}
+
+// ------------------------------------------------------------------ events
+
+document.addEventListener('click', function (e) {
+  const el = e.target.closest('[data-act]');
+  if (el) { act(el.dataset.act, el.dataset); return; }
+  if (e.target.id === 'modal') closeModal();
+});
+
+document.addEventListener('submit', function (e) {
+  e.preventDefault();
+  const kind = e.target.dataset.form;
+  if (kind === 'awaken') {
+    const n = $('#name-input').value.trim().slice(0, MAX_NAME);
+    P.name = n || 'Hunter';
+    P.awakened = true;
+    rollover(P, today());
+    save();
+    tab = 'status';
+    render();
+    window.scrollTo(0, 0);
+  } else if (kind === 'addquest') {
+    const title = $('#q-title').value;
+    if (addQuest(P, title, $('#q-xp').value)) {
+      save();
+      closeModal();
+      render();
+    } else {
+      $('#q-err').textContent = P.quests.length >= MAX_QUESTS
+        ? 'You can keep up to ' + MAX_QUESTS + ' quests. Remove one first.'
+        : 'Type a quest name first.';
+    }
+  }
+});
+
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !$('#modal').hidden) closeModal();
+});
+
+function act(name, d) {
+  if (name === 'tab') { tab = d.tab; render(); window.scrollTo(0, 0); }
+  else if (name === 'close') closeModal();
+  else if (name === 'spend') { if (spendPoint(P, +d.i)) { save(); render(); } }
+  else if (name === 'complete') {
+    const r = completeQuest(P, +d.i, today());
+    if (!r.xp) return;
+    save();
+    render();
+    let msg = 'Quest complete!  +' + r.xp + ' XP';
+    if (r.allDone) msg += '\nAll quests cleared! Bonus +' + r.bonusXp + ' XP  |  streak ' + P.streak;
+    announce(msg, r);
+  }
+  else if (name === 'remove') {
+    const q = P.quests[+d.i];
+    if (!q) return;
+    openModal(
+      '<h3 id="modal-title">REMOVE QUEST?</h3><p>' + esc(q.title) + '</p>' +
+      '<div class="modal-actions"><button class="btn ghost" type="button" data-act="close">Cancel</button>' +
+      '<button class="btn danger" type="button" data-act="removeok" data-i="' + (+d.i) + '">Remove</button></div>'
+    );
+  }
+  else if (name === 'removeok') { deleteQuest(P, +d.i); save(); closeModal(); render(); }
+  else if (name === 'addquest') {
+    openModal(
+      '<h3 id="modal-title">NEW QUEST</h3>' +
+      '<form data-form="addquest" class="stack">' +
+        '<div class="field"><label class="label" for="q-title">Quest</label>' +
+        '<input id="q-title" maxlength="' + MAX_TITLE + '" autocomplete="off" placeholder="e.g. Meditate 10 min"></div>' +
+        '<div class="field"><label class="label" for="q-xp">XP reward (' + MIN_XP + '-' + MAX_XP + ')</label>' +
+        '<input id="q-xp" type="number" inputmode="numeric" min="' + MIN_XP + '" max="' + MAX_XP + '" value="30"></div>' +
+        '<p id="q-err" class="error" role="alert"></p>' +
+        '<div class="modal-actions"><button class="btn ghost" type="button" data-act="close">Cancel</button>' +
+        '<button class="btn primary" type="submit">Add quest</button></div>' +
+      '</form>'
+    );
+  }
+  else if (name === 'gatemin') { selMin = +d.m; render(); }
+  else if (name === 'gatestart') { startGate(P, selMin, Date.now()); save(); render(); }
+  else if (name === 'abandon') { abandonGate(P); save(); render(); }
+  else if (name === 'reset') {
+    openModal(
+      '<h3 id="modal-title">RESET PROGRESS?</h3>' +
+      '<p>This erases your level, stats and quests in this browser. A backup code is the only way to get them back.</p>' +
+      '<div class="modal-actions"><button class="btn ghost" type="button" data-act="close">Cancel</button>' +
+      '<button class="btn danger" type="button" data-act="resetok">Reset</button></div>'
+    );
+  }
+  else if (name === 'resetok') {
+    stopTick();
+    P = newPlayer();
+    memorySave = null;
+    try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ }
+    closeModal();
+    tab = 'status';
+    render();
+  }
+  else if (name === 'backup') openBackup();
+  else if (name === 'copycode') {
+    const ta = $('#backup-out');
+    const fallback = function () { ta.focus(); ta.select(); toast('Code selected. Copy it with your keyboard menu.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(ta.value).then(function () { toast('Backup code copied'); }, fallback);
+    } else fallback();
+  }
+  else if (name === 'restore') {
+    const err = $('#backup-err');
+    try {
+      const raw = JSON.parse(fromB64($('#backup-in').value));
+      if (!raw || typeof raw !== 'object' || typeof raw.level !== 'number' || !Array.isArray(raw.quests)) throw new Error('shape');
+      P = sanitize(raw);
+      P.awakened = true;
+      rollover(P, today());
+      save();
+      closeModal();
+      render();
+      toast('Progress restored');
+    } catch (e) {
+      err.textContent = 'That code did not work. Paste the whole code exactly as it was copied.';
+    }
+  }
+}
+
+// Keep things right when the page returns to the foreground or a new day starts.
+function refresh() {
+  if (!P.awakened) return;
+  const changedDay = rollover(P, today());
+  const r = finishGateIfDone(P, Date.now());
+  if (changedDay || r) {
+    save();
+    render();
+    if (r) announce('Gate cleared!  +' + r.xp + ' XP', r);
+  }
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+setInterval(refresh, 30000);
+window.addEventListener('pagehide', save);
+
+// ------------------------------------------------------------------ start
+
+if (P.awakened) { rollover(P, today()); save(); }
+render();
+if (P.awakened) refresh();
+
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+})();
+
+</script>
+</body>
+</html>
