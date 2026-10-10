@@ -1,0 +1,74 @@
+name: Build ARISE SYSTEM APK
+
+# Builds a real installable APK on GitHub's free servers and publishes it as a Release,
+# so there is one direct download link:
+#   https://github.com/oneicon07-debug/One-icon/releases/latest/download/ARISE-SYSTEM.apk
+
+on:
+  push:
+    paths:
+      - 'android/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build APK
+        shell: bash
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tee ../build.log
+
+      - name: Collect APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk ARISE-SYSTEM.apk
+
+      - name: Check your exact images are inside the APK
+        continue-on-error: true
+        run: |
+          mkdir apkcheck
+          (cd apkcheck && unzip -q ../ARISE-SYSTEM.apk)
+          for f in android/app/src/main/res/drawable-nodpi/*.jpg; do
+            h=$(sha256sum "$f" | cut -d' ' -f1)
+            if find apkcheck -name '*.jpg' -exec sha256sum {} + | grep -q "$h"; then
+              echo "OK: $(basename "$f") is inside the APK, byte-identical"
+            else
+              echo "NOT FOUND: $(basename "$f")"; exit 1
+            fi
+          done
+
+      - name: Publish APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: ARISE SYSTEM APK (latest)
+          make_latest: true
+          body: |
+            Tap ARISE-SYSTEM.apk below to download, then open it to install.
+            Built from commit ${{ github.sha }}.
+          files: ARISE-SYSTEM.apk
+
+      - name: Save error log if the build failed
+        if: failure()
+        run: tail -n 150 build.log > build-failure.txt || echo "no build log was produced" > build-failure.txt
+
+      - name: Publish error log
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-failed-${{ github.run_number }}
+          name: Build failed (run ${{ github.run_number }})
+          prerelease: true
+          body_path: build-failure.txt
