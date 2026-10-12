@@ -1,0 +1,80 @@
+name: Build Mini Paint APK
+
+# Builds the installable "Mini Paint" APK on GitHub's free servers and publishes it as a Release.
+# Direct download link (always the newest build):
+#   https://github.com/oneicon07-debug/One-icon/releases/download/mini-paint/Mini-Paint.apk
+
+on:
+  push:
+    paths:
+      - 'mini-paint/**'
+      - '.github/workflows/build-mini-paint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Bundle JSZip into the app (so it works offline)
+        run: |
+          mkdir -p /tmp/jszip && cd /tmp/jszip
+          npm pack jszip@3.10.1
+          tar xzf jszip-3.10.1.tgz
+          test -s package/dist/jszip.min.js
+          cp package/dist/jszip.min.js "$GITHUB_WORKSPACE/mini-paint/app/src/main/assets/jszip.min.js"
+          ls -la "$GITHUB_WORKSPACE/mini-paint/app/src/main/assets/"
+
+      - name: Build APK
+        shell: bash
+        working-directory: mini-paint
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tee ../build.log
+
+      - name: Collect APK
+        run: cp mini-paint/app/build/outputs/apk/debug/app-debug.apk Mini-Paint.apk
+
+      - name: Check the APK (name, signature, bundled page)
+        continue-on-error: true
+        run: |
+          ls -la Mini-Paint.apk
+          AAPT2=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
+          "$AAPT2" dump badging Mini-Paint.apk | grep -E "^package:|application-label:|launchable-activity" || true
+          unzip -l Mini-Paint.apk | grep -E "assets/(index.html|jszip.min.js)"
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | tail -1)
+          "$APKSIGNER" verify --verbose Mini-Paint.apk | head -5
+
+      - name: Publish APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mini-paint
+          name: Mini Paint APK (latest)
+          make_latest: 'false'
+          body: |
+            Tap **Mini-Paint.apk** below to download, then open it to install.
+            Built from commit ${{ github.sha }}.
+          files: Mini-Paint.apk
+
+      - name: Save error log if the build failed
+        if: failure()
+        run: tail -n 150 build.log > build-failure.txt || echo "no build log was produced" > build-failure.txt
+
+      - name: Publish error log
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mini-paint-build-failed-${{ github.run_number }}
+          name: Mini Paint build failed (run ${{ github.run_number }})
+          prerelease: true
+          make_latest: 'false'
+          body_path: build-failure.txt
