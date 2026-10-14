@@ -15,7 +15,7 @@ What the app adds around the page (the page itself is not edited):
 - "Save" goes to Pictures / Movies / Music / Downloads in a "Mini Paint" folder.
 - JSZip and jsQR (the two libraries the page loads from cdnjs) are bundled at build time, so
   zip export/import and the QR scanner work without internet.
-- App icon taken from the icon inside the HTML.
+- App icon made from the exact logo shown on the page's home screen (large ring, full tile).
 
 Same app id (`com.minipaint.app`) and same fixed debug signing key as the earlier Mini Paint
-builds, so it installs over them as an update and keeps your saved drawings. Version code 3.
+builds, so it installs over them as an update and keeps your saved drawings. Version code 4.
