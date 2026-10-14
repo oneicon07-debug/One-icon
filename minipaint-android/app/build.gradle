@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.minipaint.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.minipaint.app"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "10.0"
+    }
+
+    // One fixed signing key for every build, so a newer APK installs over the older one
+    // and your drawings are kept. (See ../README.md before publishing on Google Play.)
+    signingConfigs {
+        minipaint {
+            storeFile file('minipaint.keystore')
+            storePassword 'minipaint'
+            keyAlias 'minipaint'
+            keyPassword 'minipaint'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.minipaint
+        }
+        debug {
+            signingConfig signingConfigs.minipaint
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+// No third-party libraries: the app uses only the Android framework, so the build is small and fully offline-capable.

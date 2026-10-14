@@ -1,0 +1,108 @@
+name: Build Mini Paint APK
+
+# Builds an installable Mini Paint APK on GitHub's free servers and publishes it as a Release.
+# One direct download link (works in the phone's browser):
+#   https://github.com/oneicon07-debug/One-icon/releases/download/minipaint-latest/MiniPaint.apk
+#
+# Runs automatically when anything inside minipaint-android/ changes, or by hand from the Actions tab.
+# (The separate "ARISE SYSTEM" APK workflow is not touched.)
+
+on:
+  push:
+    paths:
+      - 'minipaint-android/**'
+      - '.github/workflows/build-minipaint-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-minipaint-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Bundle JSZip so zip features work offline
+        shell: bash
+        run: |
+          F=minipaint-android/app/src/main/assets/jszip.min.js
+          curl -fsSL --retry 3 -o "$F" https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js
+          SIZE=$(wc -c < "$F")
+          echo "jszip.min.js: $SIZE bytes"
+          sha256sum "$F"
+          test "$SIZE" -gt 50000
+          head -c 120 "$F"; echo
+
+      - name: Build APK
+        shell: bash
+        working-directory: minipaint-android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --console=plain assembleRelease 2>&1 | tee ../build.log
+
+      - name: Collect and check the APK
+        shell: bash
+        run: |
+          cp minipaint-android/app/build/outputs/apk/release/app-release.apk MiniPaint.apk
+          ls -la MiniPaint.apk
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          echo "build-tools: $BT"
+          "$BT/aapt" dump badging MiniPaint.apk | grep -E "^(package|sdkVersion|targetSdkVersion|application-label:|launchable)" || true
+          "$BT/apksigner" verify --print-certs MiniPaint.apk | head -5
+          unzip -l MiniPaint.apk | grep -E "assets/(index.html|jszip.min.js)"
+          unzip -l MiniPaint.apk | grep -q "assets/index.html"
+          unzip -l MiniPaint.apk | grep -q "assets/jszip.min.js"
+
+      - name: Keep a copy on the run page too
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiniPaint-apk
+          path: MiniPaint.apk
+          retention-days: 30
+
+      - name: Move the download tag to this commit
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f minipaint-latest
+          git push -f origin minipaint-latest
+
+      - name: Publish APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: minipaint-latest
+          name: Mini Paint APK (latest)
+          make_latest: false
+          body: |
+            Tap **MiniPaint.apk** below to download, then open it to install.
+            (If Android asks, allow installs from your browser / Files app. Play Protect may say
+            "unknown developer": tap *Install anyway*.)
+
+            Built from commit ${{ github.sha }}.
+          files: MiniPaint.apk
+
+      - name: Save error log if the build failed
+        if: failure()
+        shell: bash
+        run: tail -n 150 build.log > build-failure.txt || echo "no build log was produced (the failure happened before Gradle ran)" > build-failure.txt
+
+      - name: Publish error log
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: minipaint-build-failed-${{ github.run_number }}
+          name: Mini Paint build failed (run ${{ github.run_number }})
+          prerelease: true
+          make_latest: false
+          body_path: build-failure.txt

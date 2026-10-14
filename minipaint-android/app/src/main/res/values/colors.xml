@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mp_window_bg">#FFDDE1EA</color>
+    <color name="mp_system_bar">#FF000000</color>
+    <color name="ic_launcher_background">#FF171D35</color>
+</resources>
