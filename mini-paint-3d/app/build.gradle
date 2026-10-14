@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.minipaint.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.minipaint.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 3
+        versionName "Fixed_31"
+    }
+
+    // A fixed (public, standard "android" password) debug key, so every new build is signed
+    // with the same key and can be installed over the old one without losing your drawings.
+    signingConfigs {
+        debug {
+            storeFile file('../debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

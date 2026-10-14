@@ -1,0 +1,101 @@
+name: Build Mini Paint 3D (Fixed_31) APK
+
+# Builds the installable "Mini Paint" APK from the Mini_Paint_3D_Fixed_31 page on GitHub's free
+# servers and publishes it as a Release. This is a separate build: it uses its own folder
+# (mini-paint-3d/) and its own release tag, so the other Mini Paint / ARISE builds are not touched.
+#
+# Direct download link:
+#   https://github.com/oneicon07-debug/One-icon/releases/download/mini-paint-3d-fixed-31/Mini-Paint-3D-Fixed-31.apk
+
+on:
+  push:
+    branches:
+      - mini-paint-3d-fixed-31
+    paths:
+      - 'mini-paint-3d/**'
+      - '.github/workflows/build-mini-paint-3d.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # The page loads JSZip and jsQR from cdnjs. Bundle the same versions inside the app so zip
+      # export/import and the QR scanner also work offline. The page itself is NOT modified: the app
+      # simply answers those two requests from its own files. If this step fails, the app still
+      # works (it falls back to loading them from the internet).
+      - name: Bundle JSZip and jsQR into the app
+        continue-on-error: true
+        run: |
+          set -e
+          A="$GITHUB_WORKSPACE/mini-paint-3d/app/src/main/assets"
+          mkdir -p /tmp/vendor/jszip /tmp/vendor/jsqr
+          (cd /tmp/vendor/jszip && npm pack jszip@3.10.1 && tar xzf jszip-3.10.1.tgz && test -s package/dist/jszip.min.js && cp package/dist/jszip.min.js "$A/jszip.min.js")
+          (cd /tmp/vendor/jsqr && npm pack jsqr@1.4.0 && tar xzf jsqr-1.4.0.tgz && test -s package/dist/jsQR.js && cp package/dist/jsQR.js "$A/jsQR.min.js")
+          ls -la "$A"
+
+      - name: Build APK
+        shell: bash
+        working-directory: mini-paint-3d
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tee ../build.log
+
+      - name: Collect APK
+        run: cp mini-paint-3d/app/build/outputs/apk/debug/app-debug.apk Mini-Paint-3D-Fixed-31.apk
+
+      - name: Check your exact HTML is inside the APK
+        run: |
+          src=$(sha256sum mini-paint-3d/app/src/main/assets/index.html | cut -d' ' -f1)
+          inapk=$(unzip -p Mini-Paint-3D-Fixed-31.apk assets/index.html | sha256sum | cut -d' ' -f1)
+          echo "source : $src"
+          echo "in apk : $inapk"
+          test "$src" = "$inapk"
+          echo "OK: index.html inside the APK is byte-identical to the file you supplied"
+
+      - name: Check the APK (name, version, signature, bundled files)
+        continue-on-error: true
+        run: |
+          ls -la Mini-Paint-3D-Fixed-31.apk
+          AAPT2=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
+          "$AAPT2" dump badging Mini-Paint-3D-Fixed-31.apk | grep -E "^package:|application-label:|launchable-activity|uses-permission" || true
+          unzip -l Mini-Paint-3D-Fixed-31.apk | grep -E "assets/" || true
+          APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | tail -1)
+          "$APKSIGNER" verify --verbose Mini-Paint-3D-Fixed-31.apk | head -5
+
+      - name: Publish APK download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mini-paint-3d-fixed-31
+          target_commitish: ${{ github.sha }}
+          name: Mini Paint 3D - Fixed_31 APK
+          make_latest: 'false'
+          body: |
+            Tap **Mini-Paint-3D-Fixed-31.apk** below to download, then open it to install.
+            Built from commit ${{ github.sha }}.
+          files: Mini-Paint-3D-Fixed-31.apk
+
+      - name: Save error log if the build failed
+        if: failure()
+        run: tail -n 150 build.log > build-failure.txt || echo "no build log was produced" > build-failure.txt
+
+      - name: Publish error log
+        if: failure()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: mini-paint-3d-build-failed-${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          name: Mini Paint 3D build failed (run ${{ github.run_number }})
+          prerelease: true
+          make_latest: 'false'
+          body_path: build-failure.txt
