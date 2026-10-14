@@ -186,9 +186,28 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    /** First let the page close its Privacy Policy / Terms of Use pop-up, if one is open. */
     @Override
     @SuppressWarnings("deprecation")
     public void onBackPressed() {
+        if (web == null) {
+            super.onBackPressed();
+            return;
+        }
+        web.evaluateJavascript(
+                "(function(){try{return !!(window.__mpLegalClose&&window.__mpLegalClose())}catch(e){return false}})()",
+                new ValueCallback<String>() {
+                    @Override
+                    public void onReceiveValue(String closed) {
+                        if (!"true".equals(closed)) {
+                            handleBack();
+                        }
+                    }
+                });
+    }
+
+    @SuppressWarnings("deprecation")
+    private void handleBack() {
         if (web != null && web.canGoBack()) {
             web.goBack();
             return;
