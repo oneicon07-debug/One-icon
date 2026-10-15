@@ -1,19 +1,19 @@
-name: Build Mini Paint 3D (Fixed_31) APK
+name: Build Mini Paint 3D (Fixed_34) APK
 
-# Builds the installable "Mini Paint" APK from the Mini_Paint_3D_Fixed_31 page on GitHub's free
+# Builds the installable "Mini Paint" APK from the Mini_Paint_3D_Fixed_34 page on GitHub's free
 # servers and publishes it as a Release. This is a separate build: it uses its own folder
 # (mini-paint-3d/) and its own release tag, so the other Mini Paint / ARISE builds are not touched.
 #
 # Direct download link:
-#   https://github.com/oneicon07-debug/One-icon/releases/download/mini-paint-3d-fixed-31/Mini-Paint-3D-Fixed-31.apk
+#   https://github.com/oneicon07-debug/One-icon/releases/download/mini-paint-3d-fixed-34/Mini-Paint-3D-Fixed-34.apk
 
 on:
   push:
     branches:
-      - mini-paint-3d-fixed-31
+      - mini-paint-3d-fixed-34
     paths:
       - 'mini-paint-3d/**'
-      - '.github/workflows/build-mini-paint-3d.yml'
+      - '.github/workflows/build-mini-paint-3d-34.yml'
   workflow_dispatch:
 
 permissions:
@@ -52,12 +52,12 @@ jobs:
           ./gradlew --no-daemon --console=plain assembleDebug 2>&1 | tee ../build.log
 
       - name: Collect APK
-        run: cp mini-paint-3d/app/build/outputs/apk/debug/app-debug.apk Mini-Paint-3D-Fixed-31.apk
+        run: cp mini-paint-3d/app/build/outputs/apk/debug/app-debug.apk Mini-Paint-3D-Fixed-34.apk
 
       - name: Check your exact HTML is inside the APK
         run: |
           src=$(sha256sum mini-paint-3d/app/src/main/assets/index.html | cut -d' ' -f1)
-          inapk=$(unzip -p Mini-Paint-3D-Fixed-31.apk assets/index.html | sha256sum | cut -d' ' -f1)
+          inapk=$(unzip -p Mini-Paint-3D-Fixed-34.apk assets/index.html | sha256sum | cut -d' ' -f1)
           echo "source : $src"
           echo "in apk : $inapk"
           test "$src" = "$inapk"
@@ -66,24 +66,24 @@ jobs:
       - name: Check the APK (name, version, signature, bundled files)
         continue-on-error: true
         run: |
-          ls -la Mini-Paint-3D-Fixed-31.apk
+          ls -la Mini-Paint-3D-Fixed-34.apk
           AAPT2=$(ls $ANDROID_HOME/build-tools/*/aapt2 | tail -1)
-          "$AAPT2" dump badging Mini-Paint-3D-Fixed-31.apk | grep -E "^package:|application-label:|launchable-activity|uses-permission" || true
-          unzip -l Mini-Paint-3D-Fixed-31.apk | grep -E "assets/" || true
+          "$AAPT2" dump badging Mini-Paint-3D-Fixed-34.apk | grep -E "^package:|application-label:|launchable-activity|uses-permission" || true
+          unzip -l Mini-Paint-3D-Fixed-34.apk | grep -E "assets/" || true
           APKSIGNER=$(ls $ANDROID_HOME/build-tools/*/apksigner | tail -1)
-          "$APKSIGNER" verify --verbose Mini-Paint-3D-Fixed-31.apk | head -5
+          "$APKSIGNER" verify --verbose Mini-Paint-3D-Fixed-34.apk | head -5
 
       - name: Publish APK download
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: mini-paint-3d-fixed-31
+          tag_name: mini-paint-3d-fixed-34
           target_commitish: ${{ github.sha }}
-          name: Mini Paint 3D - Fixed_31 APK
+          name: Mini Paint 3D - Fixed_34 APK
           make_latest: 'false'
           body: |
-            Tap **Mini-Paint-3D-Fixed-31.apk** below to download, then open it to install.
+            Tap **Mini-Paint-3D-Fixed-34.apk** below to download, then open it to install.
             Built from commit ${{ github.sha }}.
-          files: Mini-Paint-3D-Fixed-31.apk
+          files: Mini-Paint-3D-Fixed-34.apk
 
       - name: Save error log if the build failed
         if: failure()
@@ -93,9 +93,9 @@ jobs:
         if: failure()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: mini-paint-3d-build-failed-${{ github.run_number }}
+          tag_name: mini-paint-3d-fixed-34-build-failed-${{ github.run_number }}
           target_commitish: ${{ github.sha }}
-          name: Mini Paint 3D build failed (run ${{ github.run_number }})
+          name: Mini Paint 3D Fixed_34 build failed (run ${{ github.run_number }})
           prerelease: true
           make_latest: 'false'
           body_path: build-failure.txt
