@@ -10,8 +10,8 @@ android {
         applicationId "com.minipaint.app"
         minSdk 24
         targetSdk 34
-        versionCode 5
-        versionName "Fixed_34"
+        versionCode 6
+        versionName "Fixed_38"
     }
 
     // A fixed (public, standard "android" password) debug key, so every new build is signed

@@ -983,7 +983,7 @@ function strip(){
 }
 function ub(){$('un').disabled=!undo.length;$('re').disabled=!redo.length}
 function ui(){lp();fl();ub();if(tab=='an')strip()}
-function snap(){const l=cur();undo.push({l,d:l.x.getImageData(0,0,W,H)});if(undo.length>Math.max(5,Math.min(25,Math.floor(9e7/(W*H*4)))))undo.shift();redo=[];ub()}
+function snap(){const l=cur();undo.push({l,d:l.x.getImageData(0,0,W,H),rs:redo});redo=[];ub()}
 function swap(a,b){if(sel){commitSel(0);return}const e=a.pop();if(!e)return;if(!F().L.includes(e.l))return swap(a,b);b.push({l:e.l,d:e.l.x.getImageData(0,0,W,H)});e.l.x.putImageData(e.d,0,0);ub();dirty()}
 $('un').onclick=()=>swap(undo,redo);$('re').onclick=()=>swap(redo,undo);
 $('nw').onclick=()=>toGal();
@@ -1020,6 +1020,8 @@ function mkTip(k,a,b){return mk(x=>{
     if(k=='soft'){g.addColorStop(0,wc+'.34)');g.addColorStop(.5,wc+'.16)');g.addColorStop(1,wc+'0)')}
     else{g.addColorStop(0,wc+'.3)');if(k=='trap')g.addColorStop(a,wc+'.3)');g.addColorStop(1,wc+'0)')}
     x.fillStyle=g;x.fillRect(0,0,128,128);
+  }else if(k=='fade'){
+    const g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,wc+'1)');g.addColorStop(.5,wc+'.9)');g.addColorStop(.82,wc+'.3)');g.addColorStop(1,wc+'0)');x.fillStyle=g;x.fillRect(0,0,128,128);
   }else if(k=='part'){
     for(let i=0;i<a;i++){const t=Math.random()*6.283,r=Math.sqrt(Math.random())*62;x.fillStyle=wc+(.5+Math.random()*.5)+')';x.beginPath();x.arc(64+Math.cos(t)*r,64+Math.sin(t)*r,.6+Math.random()*b,0,6.283);x.fill()}
   }else if(k=='grain'){
@@ -1041,7 +1043,7 @@ const BR=[
 ['dipB','Dip Pen (Bleed)','Ink',3,100,{v:.5,j:.6}],
 ['feltS','Felt Tip Pen (Soft)','Simple',10,90,{}],
 ['feltH','Felt Tip Pen (Hard)','Simple',8,100,{}],
-['fade','Pen (Fade)','Simple',16,100,{v:.9}],
+['fade','Pen (Fade)','Simple',125,100,{st:1,sp:4,sc:0,fd:1,tp:[.25,.55,0],t:['fade']}],
 ['impf','Impasto Brush - Flat','Sketch',48,90,{st:1,sp:5,sc:0,dr:1,t:['flat']}],
 ['digi','Digital Pen','Simple',4,100,{}],
 ['airN','Airbrush (Normal)','Airbrush',44,70,{st:1,sp:10,sc:0,t:['soft']}],
@@ -1073,19 +1075,19 @@ function tint(b){
   x.globalCompositeOperation='destination-in';x.drawImage(b.t,0,0);b.k=k;return c;
 }
 function stp(c,x,y,pr,ang,k=1,R=Math.random){
-  const b=B[bk],s=b.s*pf(pr)*k,j=b.sc/100*s;
-  c.save();c.translate(x+(R()-.5)*2*j,y+(R()-.5)*2*j);
+  const b=B[bk],s=b.s*pf(pr)*(b.fd?1:k),j=b.sc/100*s;
+  c.save();if(b.fd&&k<1)c.globalAlpha*=k;c.translate(x+(R()-.5)*2*j,y+(R()-.5)*2*j);
   if(b.rot)c.rotate(R()*6.283);else if(b.dr)c.rotate((ang||0)+1.5708);
   c.drawImage(tint(b),-s/2,-s/2,s,s);c.restore();
 }
 function walk(a,b,f){const d=Math.hypot(b.x-a.x,b.y-a.y);if(!d)return;let t=st.r;for(;t<=d;t+=st.sp)f(a.x+(b.x-a.x)*t/d,a.y+(b.y-a.y)*t/d);st.r=t-d}
 /* SK-BEGIN stroke engine: patla start / patla end (Ibis jaisa) */
 const skRng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
-const TPM={gpen:[2.5,5.5,.05],maru:[2,4,.12],dipX:[3,6.5,.04],fine:[1.8,3.5,.15],sharpP:[2,3.5,.2],crayon:[1,2,.55],dipS:[2.5,5,.08],dipH:[1.6,3.2,.22],dipB:[2,4.5,.1],feltS:[.8,1.6,.5],feltH:[.7,1.4,.55],fade:[5,9,.03],digi:[1.4,3,.28],love:[2.5,5,.06],inkp:[2.2,4.5,.1],inkb:[2.2,4.5,.1],rough:[2,4,.15],textp:[1,2,.5],softm:[2,4.5,.1],pen:[1.8,3.5,.2],pencil:[2.2,3.5,.18],char:[1,2,.5]};
+const TPM={gpen:[2.5,5.5,.05],maru:[2,4,.12],dipX:[3,6.5,.04],fine:[1.8,3.5,.15],sharpP:[2,3.5,.2],crayon:[1,2,.55],dipS:[2.5,5,.08],dipH:[1.6,3.2,.22],dipB:[2,4.5,.1],feltS:[.8,1.6,.5],feltH:[.7,1.4,.55],digi:[1.4,3,.28],love:[2.5,5,.06],inkp:[2.2,4.5,.1],inkb:[2.2,4.5,.1],rough:[2,4,.15],textp:[1,2,.5],softm:[2,4.5,.1],pen:[1.8,3.5,.2],pencil:[2.2,3.5,.18],char:[1,2,.5]};
 Object.keys(TPM).forEach(k=>{if(B[k])B[k].tp=TPM[k]});
-function skTp(b){const t=b.tp||(b.st||b.sq||b.cu?null:[1.8,3.5,.2]);return t?{ls:Math.max(20,t[0]*b.s*2),le:Math.max(34,t[1]*b.s*2),m:t[2]}:null}
+function skTp(b){const t=b.tp||(b.st||b.sq||b.cu?null:[1.8,3.5,.2]);return t?{ls:Math.max(20,t[0]*b.s*2),le:Math.max(34,t[1]*b.s*2),m:t[2],fd:b.fd}:null}
 function skTk(T,s,tot){
-  if(!T)return 1;let k=1;const ls=Math.min(T.ls,tot*.45),le=Math.min(T.le,tot*.45);
+  if(!T)return 1;if(T.fd){const sm=u=>u<=0?0:u>=1?1:u*u*(3-2*u),le=Math.max(1,Math.min(T.le,tot*.7)),ls=Math.max(1,Math.min(T.ls,tot*.3));return Math.min(.45+.55*sm(s/ls),sm((tot-s)/le))}let k=1;const ls=Math.min(T.ls,tot*.45),le=Math.min(T.le,tot*.45);
   if(s<ls)k=T.m+(1-T.m)*Math.sin(s/ls*1.5708);
   if(tot-s<le)k=Math.min(k,T.m+(1-T.m)*Math.sin((tot-s)/le*1.5708));
   return k;
@@ -1108,14 +1110,14 @@ function skFeed(s,q,pr){
 function skDraw(s,c,i0,i1,tot){
   const b=B[bk],P=s.P,T=s.T,rs=s.rs,R=s.rg;let end=rs.r;
   S2(c,()=>{
-    let u=rs.r;if(!b.st)c.beginPath();
+    let u=rs.r,cn=0;if(!b.st)c.beginPath();
     for(let i=i0;i<=i1;i++){
       const A=P[i-1],Q=P[i],d=Q.s-A.s;if(d<=0)continue;
       const ang=Math.atan2(Q.y-A.y,Q.x-A.x);
       while(u<=d){
         const t=u/d,x=A.x+(Q.x-A.x)*t,y=A.y+(Q.y-A.y)*t,pr=A.pr+(Q.pr-A.pr)*t,k=skTk(T,A.s+d*t,tot);
         if(b.st){stp(c,x,y,pr,ang,k,R);u+=s.sp}
-        else{const r=Math.max(.25,b.s*pf(pr)*(A.w+(Q.w-A.w)*t)*k/2);c.moveTo(x+r,y);c.arc(x,y,r,0,6.2832);u+=Math.max(.35,r*.2)}
+        else{const r=Math.max(.25,b.s*pf(pr)*(A.w+(Q.w-A.w)*t)*k/2);c.moveTo(x+r,y);c.arc(x,y,r,0,6.2832);if(++cn>150){c.fill();c.beginPath();cn=0}u+=Math.max(.35,r*.2)}
       }
       u-=d;
     }
@@ -1127,9 +1129,9 @@ function skFinish(s,b){
   const P=s.P,f=s.raw;let g=0;
   while(g++<8&&Math.hypot(f.x-s.a.x,f.y-s.a.y)>1.2)skFeed(s,{x:s.a.x+(f.x-s.a.x)*.5,y:s.a.y+(f.y-s.a.y)*.5},s.p0);
   skQuad(s,s.m,s.a,s.a,s.w,s.w,s.p0,s.p0);
-  const tot=P[P.length-1].s;lc.clearRect(0,0,W,H);
+  const tot=P[P.length-1].s,inc=!s.T&&tot>=2;if(!inc)lc.clearRect(0,0,W,H);
   if(tot<2)S2(lc,()=>{if(b.st)stp(lc,P[0].x,P[0].y,P[0].pr,0,1,s.rg);else{lc.beginPath();lc.arc(P[0].x,P[0].y,b.s*pf(P[0].pr)/2,0,6.2832);lc.fill()}});
-  else{s.rs={r:0};s.rg=skRng(s.seed);skDraw(s,lc,1,P.length-1,tot)}
+  else if(inc)skDraw(s,lc,Math.max(1,s.drawn+1),P.length-1,tot);else{s.rs={r:0};s.rg=skRng(s.seed);skDraw(s,lc,1,P.length-1,tot)}
   cl(b.o);useC();dirty();
 }
 /* SK-END */
@@ -1293,15 +1295,21 @@ $('rd').onclick=()=>{rx.clearRect(0,0,W,H);RF.blob=null;vid=null;dirty()};
 /* ---------- view ---------- */
 const apply=()=>{stage.style.transform='translate('+V.x+'px,'+V.y+'px) rotate('+V.r+'rad) scale('+V.f*V.z+','+V.z+')'};
 function fit(){const r=wrap.getBoundingClientRect(),w=Math.max(50,Math.min(r.width-16,(r.height-16)*W/H));stage.style.width=w+'px';stage.style.height=w*H/W+'px'}
+let WRC=null,WRT=0;const wrapRect=()=>{const n=performance.now();if(!WRC||n-WRT>400){WRC=wrap.getBoundingClientRect();WRT=n}return WRC};addEventListener('resize',()=>{WRC=null});
+let ZMT=0,AQ=0,GQ=null,GQT=0;(()=>{const s=document.createElement('style');s.textContent='#stage.zm{will-change:transform;box-shadow:none!important}';document.head.appendChild(s)})();
+const zmOn=()=>{stage.classList.add('zm');clearTimeout(ZMT);ZMT=setTimeout(()=>stage.classList.remove('zm'),300)};
+const applyQ=()=>{if(!AQ)AQ=requestAnimationFrame(()=>{AQ=0;apply()})};
 function gx(g,cx,cy,nz,nr){
-  const r=wrap.getBoundingClientRect(),ox=r.left+r.width/2,oy=r.top+r.height/2,dx=g.cx-ox-g.x,dy=g.cy-oy-g.y,c=Math.cos(g.r),s=Math.sin(g.r),ux=(dx*c+dy*s)/g.z,uy=(-dx*s+dy*c)/g.z;
+  const r=wrapRect(),ox=r.left+r.width/2,oy=r.top+r.height/2,dx=g.cx-ox-g.x,dy=g.cy-oy-g.y,c=Math.cos(g.r),s=Math.sin(g.r),ux=(dx*c+dy*s)/g.z,uy=(-dx*s+dy*c)/g.z;
   V.z=Math.max(.1,Math.min(64,nz));V.r=nr;const c1=Math.cos(nr),s1=Math.sin(nr);
   V.x=cx-ox-(c1*ux-s1*uy)*V.z;V.y=cy-oy-(s1*ux+c1*uy)*V.z;apply();
 }
+let PTG=null,PTT=0;addEventListener('resize',()=>{PTG=null});addEventListener('orientationchange',()=>{PTG=null});
+function ptG(e){const n=e.timeStamp||0;if(!PTG||n-PTT>250||n<PTT){PTG={r:wrap.getBoundingClientRect(),w:stage.offsetWidth,h:stage.offsetHeight};PTT=n}return PTG}
 function pt(e){
-  const r=wrap.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2+V.x),dy=e.clientY-(r.top+r.height/2+V.y),c=Math.cos(V.r),s=Math.sin(V.r);
+  const G=ptG(e),r=G.r,dx=e.clientX-(r.left+r.width/2+V.x),dy=e.clientY-(r.top+r.height/2+V.y),c=Math.cos(V.r),s=Math.sin(V.r);
   let lx=(dx*c+dy*s)/V.z;const ly=(-dx*s+dy*c)/V.z;if(V.f<0)lx=-lx;
-  const w=stage.offsetWidth,h=stage.offsetHeight;return{x:(lx+w/2)*W/w,y:(ly+h/2)*H/h};
+  const w=G.w,h=G.h;return{x:(lx+w/2)*W/w,y:(ly+h/2)*H/h};
 }
 $('fz').onclick=()=>{V={z:1,x:0,y:0,r:0,f:1};apply()};
 wrap.onwheel=e=>{e.preventDefault();gx({cx:e.clientX,cy:e.clientY,x:V.x,y:V.y,z:V.z,r:V.r},e.clientX,e.clientY,V.z*(e.deltaY<0?1.12:.89),V.r)};
@@ -1386,7 +1394,7 @@ $('ss').oninput=e=>{if(sel){sel.s=e.target.value/100;showSel()}};
 $('sr').oninput=e=>{if(sel){sel.r=e.target.value*Math.PI/180;showSel()}};
 function cancelStroke(){
   if(!st)return;
-  lc.clearRect(0,0,W,H);if(st.sn){const e=undo.pop();if(e)e.l.x.putImageData(e.d,0,0)}
+  lc.clearRect(0,0,W,H);if(st.sn){const e=undo.pop();if(e){e.l.x.putImageData(e.d,0,0);if(e.rs)redo=e.rs}}
   const x=cur().x;x.globalCompositeOperation='source-over';x.globalAlpha=1;st=null;ub();
 }
 wrap.oncontextmenu=e=>e.preventDefault();
@@ -1435,10 +1443,10 @@ wrap.onpointermove=e=>{
   if(ptrs.has(e.pointerId))ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(ptrs.size>=2&&g0){
     const[a,b]=[...ptrs.values()];
-    gx(g0,(a.x+b.x)/2,(a.y+b.y)/2,g0.z*(Math.hypot(a.x-b.x,a.y-b.y)||1)/g0.d,g0.r+Math.atan2(b.y-a.y,b.x-a.x)-g0.a);return;
+    GQ=[g0,(a.x+b.x)/2,(a.y+b.y)/2,g0.z*(Math.hypot(a.x-b.x,a.y-b.y)||1)/g0.d,g0.r+Math.atan2(b.y-a.y,b.x-a.x)-g0.a];zmOn();if(!GQT)GQT=requestAnimationFrame(()=>{GQT=0;const q=GQ;GQ=null;if(q)gx(...q)});return;
   }
   if(!st||e.pointerId!=st.id)return;
-  if(st.hand){V.x+=e.clientX-st.x;V.y+=e.clientY-st.y;st.x=e.clientX;st.y=e.clientY;apply();return}
+  if(st.hand){V.x+=e.clientX-st.x;V.y+=e.clientY-st.y;st.x=e.clientX;st.y=e.clientY;zmOn();applyQ();return}
   const p=pt(e);
   if(st.mv){sel.x+=p.x-st.a.x;sel.y+=p.y-st.a.y;st.a=p;showSel();return}
   if(st.lasso){
@@ -1449,15 +1457,15 @@ wrap.onpointermove=e=>{
   if(st.nw){
     const L2=e.getCoalescedEvents?e.getCoalescedEvents():[];
     for(const v of(L2.length?L2:[e])){
-      const q0=pt(v),k=1-K.stab/100*.93,sm=st.sm;sm.x+=(q0.x-sm.x)*k;sm.y+=(q0.y-sm.y)*k;st.raw=q0;
+      const q0=pt(v),k=SMk(st,q0,v),sm=st.sm;sm.x+=(q0.x-sm.x)*k;sm.y+=(q0.y-sm.y)*k;st.raw=q0;
       skFeed(st,{x:sm.x,y:sm.y},prs(v));
     }
-    const n=st.P.length-1;if(n>st.drawn){skDraw(st,lc,st.drawn+1,n,Infinity);st.drawn=n}
+    if(!st.rq){const s0=st;st.rq=requestAnimationFrame(()=>{s0.rq=0;if(st!==s0)return;const n=s0.P.length-1;if(n>s0.drawn){skDraw(s0,lc,s0.drawn+1,n,Infinity);s0.drawn=n}})}
     return;
   }
   const b=B[bk],L=e.getCoalescedEvents?e.getCoalescedEvents():[];
   for(const v of(L.length?L:[e])){
-    const q0=pt(v),k=1-K.stab/100*.93,sm=st.sm;sm.x+=(q0.x-sm.x)*k;sm.y+=(q0.y-sm.y)*k;
+    const q0=pt(v),k=SMk(st,q0,v),sm=st.sm;sm.x+=(q0.x-sm.x)*k;sm.y+=(q0.y-sm.y)*k;
     const q={x:sm.x,y:sm.y},pr=prs(v),{c,a,m}=st;
     if(b.st){const an=Math.atan2(q.y-a.y,q.x-a.x);walk(a,q,(x,y)=>S2(c,()=>stp(c,x,y,pr,an)))}
     else{
@@ -1474,7 +1482,7 @@ function end(e){
   if(s.hand||s.mv)return;
   if(s.lasso){lc.clearRect(0,0,W,H);if(s.path.length>4)lift(s.path);return}
   if(s.sh){shp(s.a,s.q);cl(b.o);useC();dirty();return}
-  if(s.nw){skFinish(s,b);return}
+  if(s.nw){if(s.rq){cancelAnimationFrame(s.rq);s.rq=0}skFinish(s,b);return}
   const{c,a,m}=s;
   if(!b.st)S2(c,()=>{c.beginPath();c.moveTo(m.x,m.y);c.lineTo(a.x,a.y);c.stroke()});
   if(c===lc)cl(b.o);else{c.globalCompositeOperation='source-over';c.globalAlpha=1}
@@ -1616,9 +1624,9 @@ function gMk(p){let n=IDX.filter(m=>m.fd).length+1,nm;do{nm='Folder'+n++}while(I
 function gGo(id){gcur=id;gs=0;gsl.clear();renderGal();const g=$('gg');g.classList.remove('gin');void g.offsetWidth;g.classList.add('gin')}
 function thumb(){const t=document.createElement('canvas'),k=Math.min(1,220/Math.max(W,H));t.width=Math.round(W*k);t.height=Math.round(H*k);t.getContext('2d').drawImage(comp(P.frames[0]),0,0,t.width,t.height);return t.toDataURL('image/jpeg',.75)}
 function tlTick(){const nw=Date.now();if(tlLast&&proj)proj.sec=(proj.sec||0)+(nw-tlLast)/1000;tlLast=nw}
-function dirty(){if(!proj)return;tlTick();tlRec();clearTimeout(dt);dt=setTimeout(persist,2500);if(tab=='an'&&F()&&F().th)th(F())}
+function dirty(){if(!proj)return;tlTick();clearTimeout(window.__tlT);window.__tlT=setTimeout(()=>{if(!st&&!ptrs.size)tlRec()},260);clearTimeout(dt);dt=setTimeout(persist,2500);if(tab=='an'&&F()&&F().th)th(F())}
 async function persist(){
-  const pj=proj;if(!pj)return;if(busy){again=1;return}busy=1;
+  const pj=proj;if(!pj)return;if(st||ptrs.size){clearTimeout(dt);dt=setTimeout(persist,1500);return}if(busy){again=1;return}busy=1;
   try{
     const o={v:3,w:W,h:H,bg:window.BGC||'#ffffff',ln,fi:P.fi,fps:P.fps,onion:P.onion,frames:[],ref:{b:RF.blob,op:RF.op,vis:RF.vis},snd:P.snd.map(s=>({n:s.n,b:s.blob,f:s.f}))};
     for(const f of P.frames){const fr={ci:f.ci,L:[]};for(const l of f.L)fr.L.push({b:await blob(l.c),vis:l.vis,op:l.op,n:l.n,nm:l.nm,tx:l.tx,bm:l.bm,al:l.al,cp:l.cp});o.frames.push(fr)}
@@ -1748,12 +1756,12 @@ const TLVT=['With Window','Without Window','View fixation'],TLVH=['tool, colour 
 var TLP=null,TLB=[];
 const tlTl=t=>({brush:'Brush',eraser:'Eraser',fill:'Fill',shape:'Shape'}[t]||'Edit');
 function tlView(){try{const r=wrap.getBoundingClientRect(),a=pt({clientX:r.left,clientY:r.top}),z=pt({clientX:r.right,clientY:r.bottom}),v=[Math.min(a.x,z.x)/W,Math.min(a.y,z.y)/H,Math.max(a.x,z.x)/W,Math.max(a.y,z.y)/H].map(x=>Math.max(0,Math.min(1,x)));if(v[2]-v[0]>.05&&v[3]-v[1]>.05&&(v[2]-v[0]<.98||v[3]-v[1]<.98))return v.map(x=>+x.toFixed(3))}catch(e){}return null}
-wrap.addEventListener('pointerdown',e=>{TLP=null;if(proj&&!ptrs.size&&!st&&(tool=='brush'||tool=='eraser'||tool=='fill'||tool=='shape')){try{TLP={id:e.pointerId,t:tool,l:0,b:(tool=='brush'||tool=='shape')?tlBase():null,m:{k:tlTl(tool),c:tool=='eraser'?'#9a9a9e':color,s:tool=='fill'?0:Math.round((B[bk]||{}).s||0),t:Math.round(proj.sec||0),v:tlView()}}}catch(x){TLP=null}}},true);
+wrap.addEventListener('pointerdown',e=>{TLP=null;if(proj&&!ptrs.size&&!st&&(tool=='brush'||tool=='eraser'||tool=='fill'||tool=='shape')){try{TLP={id:e.pointerId,t:tool,l:0,b:null,m:{k:tlTl(tool),c:tool=='eraser'?'#9a9a9e':color,s:tool=='fill'?0:Math.round((B[bk]||{}).s||0),t:Math.round(proj.sec||0),v:tlView()}}}catch(x){TLP=null}}},true);
 wrap.addEventListener('pointermove',e=>{if(TLP&&!TLP.e&&e.pointerId==TLP.id)tlLive()},true);
 ['pointerup','pointercancel'].forEach(n=>wrap.addEventListener(n,e=>{if(TLP&&e.pointerId==TLP.id)TLP.e=Date.now()},true));
 /* while the pen is down: a frame about 7 times a second (previous state + the stroke that is being drawn) */
 function tlLive(){
-  const s=TLP,now=Date.now();if(!s||s.e||!proj||now-s.l<130)return;s.l=now;
+  const s=TLP,now=Date.now();if(!s||s.e||!proj||now-s.l<1e9)return;s.l=now;
   try{
     let u;
     if(s.b){const b=s.b,t=tlLive.c||(tlLive.c=document.createElement('canvas'));if(t.width!=b.width||t.height!=b.height){t.width=b.width;t.height=b.height}
@@ -2384,11 +2392,11 @@ $('c_cr').onclick=()=>resz('crop',+$('cvw').value,+$('cvh').value);
 $('c_rt').onclick=()=>resz('rot');
 $('vr').onclick=()=>{V.r+=Math.PI/2;apply()};
 {const _e=enterEditor;enterEditor=function(){_e();cvsz()}}
-{const T=new Map();let mx=0,t0=0;
-wrap.addEventListener('pointerdown',e=>{if(e.pointerType!='touch')return;if(!T.size)t0=performance.now();T.set(e.pointerId,{x:e.clientX,y:e.clientY,m:0});mx=Math.max(mx,T.size)},true);
-wrap.addEventListener('pointermove',e=>{const p=T.get(e.pointerId);if(p&&Math.hypot(e.clientX-p.x,e.clientY-p.y)>14)p.m=1},true);
-wrap.addEventListener('pointerup',e=>{if(!T.has(e.pointerId))return;const moved=[...T.values()].some(v=>v.m);T.delete(e.pointerId);if(!T.size){if(!moved&&performance.now()-t0<280){if(mx==2)$('un').click();else if(mx==3)$('re').click()}mx=0}},true);
-wrap.addEventListener('pointercancel',e=>{T.delete(e.pointerId);if(!T.size)mx=0},true)}
+{const T=new Map();let mx=0,t0=0,bad=0;
+wrap.addEventListener('pointerdown',e=>{if(e.pointerType!='touch')return;const n=performance.now();if(T.size&&n-t0>1500){T.clear();mx=0}if(!T.size){t0=n;bad=0;mx=0}T.set(e.pointerId,{x:e.clientX,y:e.clientY});mx=Math.max(mx,T.size)},true);
+addEventListener('pointermove',e=>{const p=T.get(e.pointerId);if(p&&Math.hypot(e.clientX-p.x,e.clientY-p.y)>24)bad=1},true);
+const up=e=>{if(!T.has(e.pointerId))return;T.delete(e.pointerId);if(e.type=='pointercancel')bad=1;if(!T.size){if(!bad&&performance.now()-t0<450){if(mx==2)swap(undo,redo);else if(mx==3)swap(redo,undo)}mx=0;bad=0}};
+addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true)}
 }catch(err){console.error(err)}
 let RUL=null,RARM=null,RD=null,RS=false;const rlc=document.createElement('canvas'),rcx=rlc.getContext('2d'),mgd=document.createElement('div');mgd.id='mg';rlc.width=W;rlc.height=H;
 try{
@@ -4097,7 +4105,7 @@ function applyX(){
   // undo: original pixels (from src), then keep rendered result
   L.forEach(t=>{undo.push({l:t.l,d:t.src.getContext('2d').getImageData(0,0,W,H),g:grp})});
   const mx=Math.max(5,Math.min(25,Math.floor(9e7/(W*H*4))))+L.length;
-  while(undo.length>mx)undo.shift();
+  
   redo=[];ub();
   try{onion();lp();dirty()}catch(e){}
   closeX();say('Transform applied ✓');
@@ -5372,7 +5380,7 @@ const iv=setInterval(async()=>{
       smudge:256,blur:256,shape:100
     };
     for(const k in MX)if(B[k])B[k].mx=MX[k];
-    const mxOf=b=>b.mx||(b.cu?500:120);
+    const mxOf=b=>b.id=='smudge'||b.id=='blur'?256:Math.max(b.mx||0,500);
 
     /* The size sliders keep a 0..1000 "position"; value get/set speak real brush size and map it
        through a curve so small sizes stay easy to pick even when the max is 1000. */
@@ -6641,6 +6649,86 @@ wrap.addEventListener('pointercancel',fin,true);
 wrap.addEventListener('pointerleave',function(e){if(tool==='liq'&&!ps)ringHide()});
 window.__lq={dab:dab,set:function(wk,wlayer,b){work=wk;wl=wlayer;base=b}};
 }catch(err){console.error('Liquify init failed',err)}
+})();
+</script>
+<style>#wrap,#wrap *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}</style>
+<script id="smooth-fix">
+(()=>{try{let RC=null,t0=0,sw=0,sh=0;const inv=()=>{RC=null};
+addEventListener('resize',inv);addEventListener('orientationchange',inv);addEventListener('scroll',inv,true);try{new ResizeObserver(inv).observe(wrap)}catch(_){}
+/* pt(): wrap rect + stage size cached -> no forced layout on every coalesced move event */
+pt=function(e){const n=performance.now();if(!RC||e.type==='pointerdown'||n-t0>1000){RC=wrap.getBoundingClientRect();sw=window.__sw=stage.offsetWidth;sh=stage.offsetHeight;t0=n}
+const r=RC,dx=e.clientX-(r.left+r.width/2+V.x),dy=e.clientY-(r.top+r.height/2+V.y),c=Math.cos(V.r),s=Math.sin(V.r);
+let lx=(dx*c+dy*s)/V.z;const ly=(-dx*s+dy*c)/V.z;if(V.f<0)lx=-lx;return{x:(lx+sw/2)*W/sw,y:(ly+sh/2)*H/sh}};
+}catch(err){console.error('smooth-fix',err)}})();
+</script>
+<script id="smooth-fix2">
+(()=>{const E=(n,f)=>{try{f()}catch(e){console.error('fix2:'+n,e)}};
+/* ===== 1. unlimited undo / redo: newest 8 stay raw, older ones are compressed to PNG blobs in the background ===== */
+E('undo',()=>{const BUD=((navigator.deviceMemory||4)>=6?160:90)*1e6,KEEP=8,SQ=[];let SB=0,SP=0;
+const raw=a=>{let n=0;for(const e of a)if(e.d)n+=e.d.data.length;return n};
+async function spill(){if(SP)return;SP=1;try{while(!(st||ptrs.size)&&raw(undo)+raw(redo)>(window.__BUD||BUD)){
+const e=undo.slice(0,-KEEP).find(x=>x.d)||redo.slice(0,-KEEP).find(x=>x.d);if(!e)break;
+const d=e.d,c=document.createElement('canvas');c.width=d.width;c.height=d.height;c.getContext('2d').putImageData(d,0,0);
+const b=await new Promise(r=>c.toBlob(r,'image/png'));c.width=c.height=0;if(!b)break;e.blob=b;e.d=null}}catch(x){}SP=0}
+const dec=async b=>{const m=await createImageBitmap(b),c=document.createElement('canvas');c.width=m.width;c.height=m.height;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(m,0,0);return x.getImageData(0,0,c.width,c.height)};
+async function one(u){const a=u?undo:redo,b=u?redo:undo;if(sel){commitSel(0);return}
+let e=a.pop();while(e&&!F().L.includes(e.l))e=a.pop();if(!e){ub();return}
+if(!e.d&&e.blob)e.d=await dec(e.blob);
+b.push({l:e.l,d:e.l.x.getImageData(0,0,W,H)});e.l.x.putImageData(e.d,0,0);ub();dirty()}
+async function run(){SB=1;try{while(SQ.length)await one(SQ.shift())}catch(x){console.error(x)}SB=0;ub();setTimeout(spill,300)}
+swap=(a,b)=>{SQ.push(a===undo);if(!SB)run()};
+window.UC={spill,raw,busy:()=>SB||SQ.length};const _d=dirty;dirty=function(){const r=_d.apply(this,arguments);for(let i=undo.length-1;i>=0&&undo[i].rs;i--)delete undo[i].rs;clearTimeout(UC.t);UC.t=setTimeout(spill,600);return r}});
+/* ===== 2. hyper-smooth stabilizer: slow = extra smooth, fast = tight ===== */
+window.SMk=function(s,q,e){const b=1-K.stab/100*.93;if(!(K.stab>0))return b;const T=(e&&e.timeStamp)||performance.now(),r=s.__r,dt=Math.max(1,T-(s.__t||T-8));s.__r=q;s.__t=T;if(!r)return b;
+const z=(V.z||1)*(window.__sw||stage.offsetWidth)/W,v=Math.hypot(q.x-r.x,q.y-r.y)*z/dt,t=Math.min(1,Math.max(0,(v-.12)/1.1)),lo=Math.max(.2,b*.55);return lo+(b-lo)*t};
+/* ===== 3. warm-up when a canvas opens (first strokes no longer stutter) + autosave waits for a quiet moment ===== */
+E('warm',()=>{const mark=()=>{window.__lp=performance.now()};for(const t of['pointerdown','pointermove','pointerup'])addEventListener(t,mark,{capture:true,passive:true});
+const warm=()=>{try{if(!proj||st||ptrs.size||window.__wp===proj.id)return;window.__wp=proj.id;const b=B[bk];if(!b||!b.s)return;
+const x0=W*.3,y0=H*.3,s={P:[{x:x0,y:y0,s:0,w:1,pr:1}],drawn:0,a:{x:x0,y:y0},m:{x:x0,y:y0},w:1,p0:1,sm:{x:x0,y:y0},raw:{x:x0,y:y0},seed:7,rs:{r:0},T:skTp(b),sp:Math.max(1,b.s*(b.sp||0)/100)};s.rg=skRng(7);
+setup(lc);for(let i=1;i<=45;i++)skFeed(s,{x:x0+i*7,y:y0+Math.sin(i/6)*40},1);const n=s.P.length-1;if(n>0)skDraw(s,lc,1,n,Infinity);lc.clearRect(0,0,W,H);
+cur().x.getImageData(0,0,W,H);comp(F());tlFrame()}catch(e){try{lc.clearRect(0,0,W,H)}catch(_){}}};
+const idle=f=>window.requestIdleCallback?requestIdleCallback(f,{timeout:2500}):setTimeout(f,900);
+const _m=mount;mount=function(){const r=_m.apply(this,arguments);if(proj&&window.__wp!==proj.id)setTimeout(()=>idle(warm),500);return r};if(proj)idle(warm);
+const _p=persist;persist=function(){if(!document.hidden&&performance.now()-(window.__lp||0)<2200){clearTimeout(dt);dt=setTimeout(persist,1300);return}return _p.apply(this,arguments)}});
+E('slider',()=>{const _s=sl_;sl_=function(){const b=B[bk];try{if(!Object.getOwnPropertyDescriptor($('sz'),'value'))$('sz').max=Math.max(120,(b&&b.mx)||0,(b&&b.s)||0)}catch(e){}return _s.apply(this,arguments)}});
+/* ===== 4. new brushes: Sketch pencils + Plants (leaves, flowers, grass, trees) ===== */
+E('brushes',()=>{const N=256,rg=a=>()=>{a=(a*1664525+1013904223)>>>0;return a/4294967296};
+const mkc=f=>{const c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d');x.fillStyle=x.strokeStyle='#fff';x.lineCap=x.lineJoin='round';f(x);return c};
+const bl=(x,bx,by,tx,ty,w,bd)=>{const mx=(bx+tx)/2+bd,my=(by+ty)/2;x.beginPath();x.moveTo(bx-w/2,by);x.quadraticCurveTo(mx-w*.35,my,tx,ty);x.quadraticCurveTo(mx+w*.35,my,bx+w/2,by);x.fill()};
+const lf=(x,cx,cy,L,Wd,a)=>{x.save();x.translate(cx,cy);x.rotate(a);x.beginPath();x.moveTo(0,0);x.bezierCurveTo(L*.25,-Wd,L*.75,-Wd*.7,L,0);x.bezierCurveTo(L*.75,Wd*.7,L*.25,Wd,0,0);x.fill();x.globalCompositeOperation='destination-out';x.globalAlpha=.5;x.lineWidth=Math.max(1,Wd*.12);x.beginPath();x.moveTo(L*.05,0);x.lineTo(L*.92,0);x.stroke();x.restore()};
+const fl=(x,cx,cy,R,a)=>{x.save();x.translate(cx,cy);x.rotate(a);for(let i=0;i<5;i++){x.rotate(1.2566);x.beginPath();x.moveTo(0,0);x.bezierCurveTo(-R*.55,-R*.2,-R*.5,-R*.95,-R*.1,-R);x.lineTo(0,-R*.82);x.lineTo(R*.1,-R);x.bezierCurveTo(R*.5,-R*.95,R*.55,-R*.2,0,0);x.fill()}x.globalCompositeOperation='destination-out';x.beginPath();x.arc(0,0,R*.13,0,6.3);x.fill();x.restore()};
+const tuft=(n,h0,h1,sp,w0,w1,hd)=>(x,r)=>{for(let i=0;i<n;i++){const bx=N/2+(r()-.5)*N*sp*.5,by=N*.98,tx=bx+(r()-.5)*N*sp,ty=N*(1-(h0+r()*(h1-h0))),w=w0+r()*(w1-w0);bl(x,bx,by,tx,ty,w,(tx-bx)*.35);if(hd)hd(x,tx,ty,r)}};
+const spikes=(n,len,lw,fan)=>(x,tx,ty,r)=>{x.lineWidth=lw;x.beginPath();for(let j=0;j<n;j++){const a=-1.5708+(j-(n-1)/2)*fan,L=len*(.7+r()*.5);x.moveTo(tx,ty);x.lineTo(tx+Math.cos(a)*L,ty+Math.sin(a)*L)}x.stroke()};
+const dots=(n,sp,rr)=>(x,tx,ty,r)=>{for(let j=0;j<n;j++){x.beginPath();x.arc(tx+(r()-.5)*sp,ty-r()*sp*1.2,rr*(.6+r()*.7),0,6.3);x.fill()}};
+const bristle=(x,tx,ty,r)=>{x.lineWidth=1.6;x.beginPath();for(let j=0;j<14;j++){const py=ty+j*2.4;for(const sd of[-1,1]){x.moveTo(tx,py);x.lineTo(tx+sd*(5+r()*5),py-7-r()*5)}}x.stroke()};
+const fern=(x,r)=>{const bx=N/2,by=N*.98,P=t=>{const u=1-t;return[u*u*bx+2*u*t*(bx+18)+t*t*(bx+8),u*u*by+2*u*t*N*.5+t*t*N*.04]};x.lineWidth=4;x.beginPath();x.moveTo(bx,by);for(let t=.04;t<=1;t+=.04){const p=P(t);x.lineTo(p[0],p[1])}x.stroke();for(let i=0;i<24;i++){const t=.1+i/27,p=P(t),L=(52*Math.pow(1-t,.55)+7)*(.85+r()*.3),a=.95+r()*.2,w=8*(1-t)+3;for(const sd of[-1,1])bl(x,p[0],p[1],p[0]+sd*L*Math.cos(a-.25),p[1]-L*Math.sin(a-.25),w,sd*L*.1)}};
+const fern3=(x,r)=>{fern(x,r);for(const d of[-36,36]){x.save();x.translate(d,0);x.scale(.9,.9);fern(x,r);x.restore()}};
+const pine=(x,r)=>{x.fillRect(N/2-8,N*.84,16,N*.16);for(let i=0;i<4;i++){const y0=N*.05+i*N*.19,hw=24+i*19,y1=y0+N*.3;x.beginPath();x.moveTo(N/2,y0);for(let k=1;k<=6;k++){const t=k/6;x.lineTo(N/2+hw*t+(k%2?-4:2)*r()*3,y0+(y1-y0)*t)}x.lineTo(N/2-hw,y1);for(let k=5;k>=1;k--){const t=k/6;x.lineTo(N/2-hw*t-(k%2?-4:2)*r()*3,y0+(y1-y0)*t)}x.closePath();x.fill()}};
+const oak=(x,r)=>{x.beginPath();x.moveTo(N/2-10,N*.99);x.lineTo(N/2-5,N*.55);x.lineTo(N/2+5,N*.55);x.lineTo(N/2+10,N*.99);x.fill();for(let i=0;i<18;i++){const a=r()*6.283,d=Math.sqrt(r());x.beginPath();x.arc(N/2+Math.cos(a)*d*82,N*.33+Math.sin(a)*d*62,26+r()*20,0,6.3);x.fill()}x.globalCompositeOperation='destination-out';for(let i=0;i<70;i++){x.globalAlpha=.35+r()*.4;x.beginPath();x.arc(N/2+(r()-.5)*170,N*.33+(r()-.5)*130,1.5+r()*3,0,6.3);x.fill()}};
+const br=(x,px,py,a,L,w,d,r)=>{if(d<0||L<5)return;const qx=px+Math.cos(a)*L,qy=py-Math.sin(a)*L;x.lineWidth=w;x.beginPath();x.moveTo(px,py);x.lineTo(qx,qy);x.stroke();const n=d>2?2:2+(r()>.55?1:0);for(let i=0;i<n;i++)br(x,qx,qy,a+(i-(n-1)/2)*.75+(r()-.5)*.5,L*(.7+r()*.12),Math.max(1.2,w*.7),d-1,r)};
+const shade=(h,a)=>{if(!/^#[0-9a-f]{6}$/i.test(h))return h;const n=parseInt(h.slice(1),16),t=a<0?0:255,p=Math.abs(a),f=v=>Math.round(v+(t-v)*p);return'#'+((1<<24)+(f(n>>16)<<16)+(f(n>>8&255)<<8)+f(n&255)).toString(16).slice(1)};
+const tv=(b,i)=>{const k=color+'|'+i,c=b.TC[i]||(b.TC[i]=document.createElement('canvas'));if(b.TK[i]===k)return c;const m=b.V[i];c.width=m.width;c.height=m.height;const x=c.getContext('2d');
+if(b.mc){const g=x.createLinearGradient(0,N,0,0);g.addColorStop(0,shade(color,[-.38,-.2,-.5][i%3]));g.addColorStop(.6,color);g.addColorStop(1,shade(color,.32));x.fillStyle=g}else x.fillStyle=color;
+x.fillRect(0,0,N,N);x.globalCompositeOperation='destination-in';x.drawImage(m,0,0);b.TK[i]=k;return c};
+const _stp=stp;stp=function(c,x,y,pr,ang,k=1,R=Math.random){const b=B[bk];if(!b||!b.V)return _stp(c,x,y,pr,ang,k,R);
+const i=Math.min(b.V.length-1,(R()*b.V.length)|0),z=b.s*pf(pr)*k*(1+(R()-.5)*2*(b.sv||0)),j=(b.sc||0)/100*z;
+c.save();c.translate(x+(R()-.5)*2*j,y+(R()-.5)*2*j);if(b.rot)c.rotate(R()*6.283);else if(b.dr)c.rotate((ang||0)+1.5708);c.drawImage(tv(b,i),-z/2,-z/2,z,z);c.restore()};
+let hh=0;const reg=(id,n,sz,fn,p)=>{const h=++hh;let V=null,T=null;const b={id,n,c:'Plants',s:sz,o:100,st:1,sv:.25,mx:400,TC:[],TK:[]};Object.assign(b,p);
+Object.defineProperty(b,'V',{get(){return V||(V=[0,1,2].map(i=>mkc(x=>fn(x,rg(h*977+i*131+7)))))}});
+Object.defineProperty(b,'t',{get(){return T||(T=mk(x=>x.drawImage(b.V[0],0,0,128,128)))}});B[id]=b};
+const G={sp:55,sc:6,sv:.25},C={sp:50,sc:6,sv:.25,mc:1},TR={sp:100,sc:4,sv:.3};
+reg('x_fs','Flower Shower',40,(x,r)=>{for(let i=0;i<5;i++)fl(x,36+r()*184,36+r()*184,20+r()*22,r()*6.3);for(let i=0;i<7;i++){x.beginPath();x.arc(10+r()*236,10+r()*236,2+r()*3,0,6.3);x.fill()}},{sp:30,sc:70,sv:.35,rot:1});
+reg('x_ls','Leaf Shower',120,(x,r)=>{for(let i=0;i<14;i++)lf(x,40+r()*176,40+r()*176,34+r()*30,9+r()*8,r()*6.3)},{sp:40,sc:60,sv:.3,rot:1});
+reg('x_l1','Leaves 1',100,(x,r)=>{for(let i=0;i<8;i++)lf(x,N/2+(r()-.5)*96,N/2+(r()-.5)*96,62+r()*40,15+r()*9,r()*6.3)},{sp:40,sc:40,sv:.3,rot:1});
+reg('x_l2','Leaves 2',100,(x,r)=>{for(let i=0;i<6;i++)lf(x,N/2+(r()-.5)*70,N/2+(r()-.5)*70,78+r()*40,28+r()*12,r()*6.3)},{sp:40,sc:40,sv:.3,rot:1});
+[['fern','Fern',fern,fern3],['fox','Green foxtail',tuft(7,.45,.85,.7,4,7,bristle),tuft(14,.4,.9,.9,4,8,bristle)],['sed','Sedge',tuft(9,.4,.9,.8,7,13),tuft(18,.35,.95,.95,7,14)],
+['nut','Nutsedge',tuft(8,.4,.8,.7,4,7,spikes(7,26,2.2,.45)),tuft(15,.4,.85,.9,4,7,spikes(7,26,2.2,.45))],['goo','Goosegrass',tuft(6,.4,.75,.6,4,7,spikes(4,36,3.2,.5)),tuft(12,.4,.8,.8,4,7,spikes(4,36,3.2,.5))],
+['kbg','Kentucky Bluegrass',tuft(12,.4,.9,.8,2.5,5,dots(9,24,2.4)),tuft(24,.35,.95,.95,2.5,5,dots(9,24,2.4))],['luz','Luzula',tuft(9,.35,.8,.8,2.5,5,dots(4,16,3.6)),tuft(18,.35,.85,.95,2.5,5,dots(4,16,3.6))]]
+.forEach(([k,n,a,c])=>{reg('x_g_'+k,'Grass ('+n+')',120,a,G);reg('x_g_'+k+'c','Grass ('+n+', Color)',120,c,C)});
+reg('x_t1','Tree 1',240,pine,TR);reg('x_t2','Tree 2',240,oak,TR);reg('x_tk','Trunk 1',240,(x,r)=>br(x,N/2,N*.99,1.5708,N*.27,13,5,r),TR);
+[['skp','Sketch Pencil',9,90,.7,6,7],['pm1','Pencil Mod (#1)',9,75,.55,5,9],['pm2','Pencil Mod (#2)',9,50,.4,5,10],['pm3','Pencil Mod (#3)',9,32,.28,5,11],['mp1','Mechanical Pencil (#1)',6,75,.45,3,1.5],['mp2','Mechanical Pencil (#2)',5,52,.35,3,1.5],['mp3','Mechanical Pencil (#3)',4,36,.28,3,1.5]]
+.forEach(([id,n,sz,o,g,sp,sc])=>{B['x_'+id]={id:'x_'+id,n,c:'Sketch',s:sz,o,st:1,sp,sc,rot:1,t:mkTip('grain',g),tp:[2.2,3.5,.18]}});
+IC.leaf='<path d="M5 19C4 10 10 4 20 4c1 10-5 16-15 15zM5 19l9-9"/>';CATS.splice(5,0,['Plants','leaf']);try{brl()}catch(e){}});
 })();
 </script>
 </body>
