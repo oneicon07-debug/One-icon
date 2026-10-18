@@ -1,0 +1,9 @@
+{
+  "appId": "com.auralab.studio",
+  "appName": "AuraLab",
+  "webDir": "www",
+  "backgroundColor": "#eeecfb",
+  "android": {
+    "allowMixedContent": false
+  }
+}
