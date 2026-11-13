@@ -10,6 +10,11 @@ import android.os.Environment;
 import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -78,8 +83,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getWindow().setStatusBarColor(0xFF1F5AF6);
-        getWindow().setNavigationBarColor(0xFFFFFFFF);
+        applyFullScreen();
 
         web = new WebView(this);
         web.setBackgroundColor(0xFFFFFFFF);
@@ -175,6 +179,46 @@ public class MainActivity extends Activity {
             startActivity(new Intent(Intent.ACTION_VIEW, uri));
         } catch (Exception ignored) {
         }
+    }
+
+    /* ---------- true full-screen: no blue status bar, app uses the whole display ---------- */
+
+    private void applyFullScreen() {
+        Window win = getWindow();
+        win.setStatusBarColor(0x00000000);
+        win.setNavigationBarColor(0x00000000);
+
+        if (Build.VERSION.SDK_INT >= 30) {
+            win.setDecorFitsSystemWindows(false);
+            WindowInsetsController c = win.getInsetsController();
+            if (c != null) {
+                c.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            win.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+            win.getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            applyFullScreen();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        applyFullScreen();
     }
 
     @Override
